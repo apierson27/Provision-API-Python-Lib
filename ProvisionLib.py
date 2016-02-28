@@ -42,8 +42,9 @@ class AdminRequests(object):
     """ All methods, exceptions, and handlers to define, modify, or remove a
         Dashboard admin account.
     """
-    def __init__(self):
-        self.url = "%s/organizations/%s/admins" % (BASE_URL, ORG_ID)
+    def __init__(self, org_id):
+        self.org_id = org_id
+        self.url = "%s/organizations/%s/admins" % (BASE_URL, self.org_id)
         self.valid_access_keys = set(["tag", "access"])
         self.valid_access_vals = set(["full", "read-only", "none"])
 
@@ -136,8 +137,7 @@ class AdminRequests(object):
 
         elif not skip_confirm:
             prompt = ("Confirm deletion of user %s (%s) from organization %s "
-                      "(y/n): ") % (to_delete["name"], to_delete["email"],
-                                    ORG_ID)
+                      "(y/n): ") % (to_delete["name"], to_delete["email"], self.org_id)
             confirm = raw_input(prompt)
             if confirm.lower() == "n" or confirm.lower() == "no":
                 print "Cancelling delete request\n"
