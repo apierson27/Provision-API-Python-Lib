@@ -114,7 +114,7 @@ class AdminRequests(object):
         # the request was successful or not; this will need defined handlers.
         return changed_admin
 
-    def del_admins(self, admin_id, skip_confirm=True):
+    def del_admin(self, admin_id, skip_confirm=True):
         """ Delete a specified admin account.
             Args:
                 admin_id: ID string of the admin to be deleted.
