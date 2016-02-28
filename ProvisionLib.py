@@ -113,7 +113,7 @@ class AdminRequests(object):
 
         # TODO (Alex): Right now this just returns regardless of whether
         # the request was successful or not; this will need defined handlers.
-        return changed_admin
+        return changed_admin.text
 
     def del_admin(self, admin_id, skip_confirm=True):
         """ Delete a specified admin account.
