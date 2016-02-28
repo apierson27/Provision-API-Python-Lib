@@ -1,5 +1,5 @@
 import requests
-
+import json
 # Hard-Coding my URL and API key for now is a stopgap
 
 BASE_URL = "https://n123.meraki.com/api/v0"
@@ -105,10 +105,10 @@ class AdminRequests(object):
 
         if admin_id:
             update_url = "%s/%s/" % (self.url, admin_id)
-            changed_admin = requests.put(update_url, json=admin_data,
+            changed_admin = requests.put(update_url, data=json.dumps(admin_data),
                                          headers=HEADERS)
         else:
-            changed_admin = requests.post(self.url, json=admin_data,
+            changed_admin = requests.post(self.url, data=json.dumps(admin_data),
                                           headers=HEADERS)
 
         # TODO (Alex): Right now this just returns regardless of whether
