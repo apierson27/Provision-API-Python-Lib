@@ -52,6 +52,7 @@ def test_add_valid():
         check_user.sort()
         check_posted = posted_user.items()
         check_posted.sort()
+
         assert check_user == check_posted and test_request.status_code == 201
 
 
@@ -60,22 +61,32 @@ def test_update_valid():
        returns HTTP 200 and that only submitted parameters are returned
        modified."""
 
+    i = 0 # Valid users and valid updates should always be of equal length
     original_users = copy.deepcopy(VALID_USERS)
+
     for user in VALID_UPDATES:
         test_request = TEST_CONNECTOR.update_admin(**user)
         updated_user = test_request.json()
 
         updated_user = __pop_untested(updated_user)
 
-        check_user = user.items()
-        check_user.sort()
+        # Remove modfied values from the posted and original sample
+        for key in original_users[i].keys():
+            if key in user.keys():
+                updated_param = (key, updated_user.pop(key))
+                original_users[i].pop(key)
+
+        check_orig = original_users[i].items()
+        check_orig.sort()
         check_posted = updated_user.items()
         check_posted.sort()
+        check_user = user.items()
+        check_user.sort()
 
-        # Remove modfied values from the posted sample
-        # This does not work yet
-        for key in user.keys():
-            pass
+        i += 1
+
+        assert updated_param in check_user and check_orig == check_posted and \
+               test_request.status_code == 200
 
 
 

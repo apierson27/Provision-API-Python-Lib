@@ -6,34 +6,36 @@ JSON_KEY = "Content-Type"
 JSON_VAL = "application/json"
 
 
-def get_data(headers, level="", request_string="", url_id="", ext_url=""):
-    """ Defines a base get request to the Meraki Dashboard.
+def format_url(headers,
+               top_level,
+               id="",
+               object="",
+               query_string=""
+               ):
+    """ Defines a base get request URL to the Meraki Dashboard.
         One can be built using this function, or a pre-formatted one can be
         passed in.
         Args:
-            level: A string of which level of data to query from; current valid
-                top-level request types are organizations or networks.
-            request_string: String indicating type of data to be queried; some
-                requests such as determining Org access for a given API key do
-                not require one.
-            url_id: String containing an Org or Network ID.
-            ext_url: an externally formatted URL; supersedes all other
-                parameters if specified
+            top_level: A string of which level of data to query from;
+            current valid request types are against organizations or networks.
+
+            object:
+
+            query_string: String indicating URL parameters to be passed
+            (e.g. timepsan when querying for usage data)
+            id: String containing an Org or Network ID.
 
         Returns:
-            A requests.get object containing, among other things, the HTTP
-            HTTP return code of the request, and the returned data.
+            A requests.Response object
     """
 # TODO (Alex): Docstring needs some work here to build-out what different
 # request strings indicate, and will need to work on adding exceptions.
 
-    if ext_url:
-        data = requests.get(ext_url, headers=headers)
-    else:
-        url = "%s/%s/%s/%s/" % (BASE_URL.strip("/"), level.strip("/"),
-                                url_id.strip("/"), request_string.strip("/"))
-        data = requests.get(url, headers=headers)
-    return data
+
+    url = "%s/%s/%s/%s/" % (BASE_URL.strip("/"), level.strip("/"),
+                            url_id.strip("/"), request_string.strip("/"))
+
+    return url
 
 class Error(Exception):
     """Base module exception."""
@@ -122,7 +124,7 @@ class DashboardAdmins(object):
                 [{id: network-id, access: access-level}]; networks must be
                 prexisting on Dashboard.
                 tags: A list of dictionaries formatted as
-                [{tag:tag-name}, {access:access-level}]; tags don't need to be
+                [{tag:tag-name, access:access-level}]; tags don't need to be
                 prexisting on Dashboard.
             Returns:
                 new_admin: a request object of the new admin's values
