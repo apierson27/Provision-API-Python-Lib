@@ -1,16 +1,16 @@
 import argparse
 import csv
+import pprint
 import sys
 import requests
 import meraki_admins
 
 """CSV reader for the Meraki Admins wrapper library."""
 
+# TODO: Argparse doesn't preserve spacing in block quotes; need to clean up
+DESCRIPTION = """ Bulk add admins to a Meraki Dashboard account from a CSV file.
 
-DESCRIPTION = """ Bulk add admins to a Meraki Dashboard account from a .csv file
-
-Files should be comma-separated and must contain the following,
-case-sensitive, column headers:
+Files should be comma-separated and must contain the following column headers:
 
 name
 email
@@ -39,20 +39,21 @@ VALID_FIELDS = ['name', 'email', 'orgaccess', 'orgid', 'operation',
 
 
 PARSER = argparse.ArgumentParser(description=DESCRIPTION)
-PARSER.add_argument('csv', help='input file', type=argparse.FileType('rU'))
-PARSER.add_argument('api key', help='API key of an admin adding the accounts.')
+PARSER.add_argument('csv', help='input file')
+PARSER.add_argument('key', help='API key of an admin adding the accounts.')
 PARSER.add_argument('-no-confirm',
                     help='Don\'t print list of admins to be added, nor prompt \
                     for confirmation before executing.', action="store_true")
 
-args = PARSER.parse_args()
+ARGS = PARSER.parse_args()
 
 def __validate_fields(fields):
     for item in fields:
-        if item not in VALID_FIELDS:
-            raise ValueError("Unexpected field name %s" % fields)
+        if item.lower() not in VALID_FIELDS:
+            raise ValueError("Unexpected field name %s" % item)
 
 def __network_tag_formatter(row):
+    """Convert rows to data structures for network and tag-level access."""
     tag_name = row.pop('tag', None)
     tag_access = row.pop('tagaccess', None)
     formatted_tags = [{"tag":tag_name, "access":tag_access}]
@@ -70,19 +71,23 @@ def __network_tag_formatter(row):
 def main():
 
     queue = {}
-    operations = {"add": meraki_admins.add_admin,
-                  "modify": meraki_admins.update_admin,
-                  "delete": meraki_admins.del_admin}
+    # Need to move this down past my class instantiation
+    # operations = {"add": meraki_admins.add_admin,
+    #               "modify": meraki_admins.update_admin,
+    #               "delete": meraki_admins.del_admin}
 
-    with open(args.csv, 'rU') as data:
+    with open(ARGS.csv, 'rU') as in_file:
         try:
-            __validate_fields(csv.DictReader(data).fieldnames)
+            data = csv.DictReader(in_file)
+            __validate_fields(data.fieldnames)
             # Build a list of user objects keyed to the corresponding OrgID
-            for row in csv.DictReader(data):
+            for row in data:
+                row = {k.lower():v for k,v in row.items()} # lowercase headers
                 org_id = row.pop('orgid')
                 queue.setdefault(org_id, [])
                 row = __network_tag_formatter(row)
                 queue[org_id].append(row)
+            pprint.pprint(queue)
 
         except (StopIteration, csv.Error):
             # intentionally not catching the ValueError raise here
