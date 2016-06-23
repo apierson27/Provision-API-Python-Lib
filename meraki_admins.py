@@ -46,7 +46,8 @@ class InvalidOrgPermissions(Error):
     def __init__(self, provided=None, valid=None):
         self.provided = provided
         self.valid = valid
-        self.default = "Org Permissions must be FULL, READ-ONLY, or NONE"
+        self.default = "Org Permissions must be FULL, READ-ONLY, or NONE \
+        (Provided: %s)" % self.provided
 
     def __str__(self):
         return repr(self.default)
@@ -82,6 +83,8 @@ class DashboardAdmins(object):
 
 
     def __provided_access_valid(self, access):
+        print "IN HANDLER"
+        print repr(access)
         if (access not in self.valid_access_vals and
                 access not in self.valid_target_vals):
             raise InvalidOrgPermissions(access, self.valid_access_vals)
@@ -112,7 +115,8 @@ class DashboardAdmins(object):
         return None
 
 
-    def add_admin(self, name, email, orgAccess, networks=None, tags=None):
+    def add_admin(self, name=None, email=None, orgAccess=None,
+                  networks=None, tags=None):
         """ Define a new org-level Admin account on Dashboard under
             Organization -> Administrators.
             Args:

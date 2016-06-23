@@ -68,34 +68,57 @@ def __network_tag_formatter(row):
 
 
 
-def main():
-
+def build_queue(user_file):
+    """Build a list of user objects keyed to the corresponding OrgID
+       in each row."""
     queue = {}
-    # Need to move this down past my class instantiation
-    # operations = {"add": meraki_admins.add_admin,
-    #               "modify": meraki_admins.update_admin,
-    #               "delete": meraki_admins.del_admin}
 
-    with open(ARGS.csv, 'rU') as in_file:
+
+    with open(user_file, 'rU') as data:
         try:
-            data = csv.DictReader(in_file)
-            __validate_fields(data.fieldnames)
-            # Build a list of user objects keyed to the corresponding OrgID
-            for row in data:
-                row = {k.lower():v for k,v in row.items()} # lowercase headers
+            users = csv.DictReader(data)
+            __validate_fields(users.fieldnames)
+            for row in users:
+                row = {k.lower():v for k, v in row.items()} # lowercase headers
                 org_id = row.pop('orgid')
                 queue.setdefault(org_id, [])
                 row = __network_tag_formatter(row)
                 queue[org_id].append(row)
-            pprint.pprint(queue)
+            return queue
 
         except (StopIteration, csv.Error):
             # intentionally not catching the ValueError raise here
             print "ERROR: Invalid CSV format or non-CSV file."
             sys.exit(1)
         except KeyError:
-            print "ERROR: orgid not found in CSV column headers."
+            print "ERROR: Mandatory header orgid missing from CSV."
             sys.exit(1)
+
+def submit_requests(queue, key=ARGS.key):
+    """Submit queued requests to each Dashboard org contained within."""
+
+    operations = {"add": meraki_admins.DashboardAdmins.add_admin,
+                  "modify": meraki_admins.DashboardAdmins.update_admin,
+                  "delete": meraki_admins.DashboardAdmins.del_admin}
+
+    for oid, user_list in queue.items():
+        submitter = meraki_admins.DashboardAdmins(oid, key)
+        try:
+            for user in user_list:
+                operation = user.pop('operation')
+                # Dashboard requires the param be camel cased
+                user['orgAccess'] = user.pop('orgaccess')
+                print "IN SUBMITTER"
+                print user
+                # TODO: Fix handler call for tags here as it's improperly
+                # getting raised when checking org-level permissions
+                operations[operation](submitter, **user)
+        except KeyError:
+            pass
+
+def main():
+    queue = build_queue(ARGS.csv)
+    submit_requests(queue)
 
 
 if __name__ == '__main__':
