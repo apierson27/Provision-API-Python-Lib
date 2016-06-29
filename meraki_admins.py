@@ -6,37 +6,6 @@ JSON_KEY = "Content-Type"
 JSON_VAL = "application/json"
 
 
-def format_url(headers,
-               top_level,
-               id="",
-               object="",
-               query_string=""
-               ):
-    """ Defines a base get request URL to the Meraki Dashboard.
-        One can be built using this function, or a pre-formatted one can be
-        passed in.
-        Args:
-            top_level: A string of which level of data to query from;
-            current valid request types are against organizations or networks.
-
-            object:
-
-            query_string: String indicating URL parameters to be passed
-            (e.g. timepsan when querying for usage data)
-            id: String containing an Org or Network ID.
-
-        Returns:
-            A requests.Response object
-    """
-# TODO (Alex): Docstring needs some work here to build-out what different
-# request strings indicate, and will need to work on adding exceptions.
-
-
-    url = "%s/%s/%s/%s/" % (BASE_URL.strip("/"), level.strip("/"),
-                            url_id.strip("/"), request_string.strip("/"))
-
-    return url
-
 class Error(Exception):
     """Base module exception."""
     pass
@@ -54,7 +23,14 @@ class InvalidOrgPermissions(Error):
 
 class InvalidNetTagPermissions(Error):
     """Thrown when invalid Network or Tag permissions are supplied."""
-    pass
+    def __init__(self, provided=None, valid=None):
+        self.provided = provided
+        self.valid = valid
+        self.default = "Tag/Network permissions must be FULL, READ-ONLY, \
+                        MONITOR-ONLY, or GUEST-AMBASSADOR\nProivded: %s" % self.provided
+
+    def __str__(self):
+        return repr(self.default)
 
 class NullPermissionError(Error):
     """Thrown when no permissionsare supplied."""
@@ -83,8 +59,6 @@ class DashboardAdmins(object):
 
 
     def __provided_access_valid(self, access):
-        print "IN HANDLER"
-        print repr(access)
         if (access not in self.valid_access_vals and
                 access not in self.valid_target_vals):
             raise InvalidOrgPermissions(access, self.valid_access_vals)
@@ -94,17 +68,22 @@ class DashboardAdmins(object):
         if not isinstance(tags, list):
             raise TypeError("Tags must be provided as a list of dictionaries.")
 
-        for i in tags:
-            if not isinstance(i, dict):
+        for tag_dict in tags:
+            if not isinstance(tag_dict, dict):
                 raise TypeError("Tags must be provided as \
                                 a list of dictionaries.")
-            elif not self.valid_tag_keys.issuperset(i.keys()):
-                raise FormatError("Error in tag format.")
-            self.__provided_access_valid(i["access"])
+            tag_dict.setdefault("access", None)
+            if not self.valid_tag_keys.issuperset(tag_dict.keys()):
+                raise FormatError("Invalid keys in tags. Found %d,\
+                                   expected %d") % (tag_dict.keys(),
+                                                    self.valid_tag_keys)
+            elif not tag_dict["access"] in self.valid_target_vals:
+                raise InvalidNetTagPermissions(valid=self.valid_target_vals,
+                                               provided=tag_dict["access"])
 
 
     def __admin_exists(self, admin_id):
-        check = get_data(ext_url=self.url, headers=self.headers)
+        check = requests.get(url=self.url, headers=self.headers)
         try:
             for admin in check.json():
                 if admin["email"] == admin_id or admin["id"] == admin_id:
