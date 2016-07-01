@@ -43,7 +43,7 @@ PARSER.add_argument('csv', help='input file')
 PARSER.add_argument('key', help='API key of an admin adding the accounts.')
 PARSER.add_argument('-no-confirm',
                     help='Don\'t print list of admins to be added, nor prompt \
-                    for confirmation before executing.', action="store_true")
+                    for confirmation before executing.', action='store_true')
 
 ARGS = PARSER.parse_args()
 
@@ -54,15 +54,18 @@ def __validate_fields(fields):
 
 def __network_tag_formatter(row):
     """Convert rows to data structures for network and tag-level access."""
-    tag_name = row.pop('tag', None)
-    tag_access = row.pop('tagaccess', None)
-    formatted_tags = [{"tag":tag_name, "access":tag_access}]
-    row['tags'] = formatted_tags
+    tag_name = row.pop('tag', '')
+    tag_access = row.pop('tagaccess', '')
+    net_name = row.pop('networkid', '')
+    net_access = row.pop('networkaccess', '')
 
-    net_name = row.pop('networkid', None)
-    net_access = row.pop('networkaccess', None)
-    formatted_net = [{"id":net_name, "access":net_access}]
-    row['networks'] = formatted_net
+    if len(tag_name) != 0:
+        formatted_tags = [{"tag":tag_name, "access":tag_access}]
+        row['tags'] = formatted_tags
+
+    if len(net_name) != 0:
+        formatted_net = [{"id":net_name, "access":net_access}]
+        row['networks'] = formatted_net
 
     return row
 
@@ -108,11 +111,9 @@ def submit_requests(queue, key=ARGS.key):
                 operation = user.pop('operation')
                 # Dashboard requires the param be camel cased
                 user['orgAccess'] = user.pop('orgaccess')
-                print "IN SUBMITTER"
-                print user
-                # TODO: Fix handler call for tags here as it's improperly
-                # getting raised when checking org-level permissions
-                operations[operation](submitter, **user)
+                pprint.pprint(user)
+                result = operations[operation](submitter, **user)
+                pprint.pprint(result)
         except KeyError:
             pass
 

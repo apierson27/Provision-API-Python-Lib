@@ -13,6 +13,7 @@ class Error(Exception):
 class InvalidOrgPermissions(Error):
     """Thrown when invalid Org-level permissions are supplied."""
     def __init__(self, provided=None, valid=None):
+        super(InvalidOrgPermissions, self).__init__()
         self.provided = provided
         self.valid = valid
         self.default = "Org Permissions must be FULL, READ-ONLY, or NONE \
@@ -24,10 +25,10 @@ class InvalidOrgPermissions(Error):
 class InvalidNetTagPermissions(Error):
     """Thrown when invalid Network or Tag permissions are supplied."""
     def __init__(self, provided=None, valid=None):
+        super(InvalidNetTagPermissions, self).__init__()
         self.provided = provided
         self.valid = valid
-        self.default = "Tag/Network permissions must be FULL, READ-ONLY, \
-                        MONITOR-ONLY, or GUEST-AMBASSADOR\nProivded: %s" % self.provided
+        self.default = "Tag/Network permissions must be FULL, READ-ONLY,MONITOR-ONLY, or GUEST-AMBASSADOR (Proivded: %s)" % self.provided
 
     def __str__(self):
         return repr(self.default)
@@ -35,6 +36,7 @@ class InvalidNetTagPermissions(Error):
 class NullPermissionError(Error):
     """Thrown when no permissionsare supplied."""
     def __init__(self):
+        super(NullPermissionError, self).__init__()
         self.default = "No Org or Tag/Network level permissions supplied."
 
     def __str__(self):
